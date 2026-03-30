@@ -25,6 +25,7 @@ const SignIn = () => {
 
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [mfaError, setMfaError] = useState<string | null>(null);
 
   const emailValid =
     emailAddress.length === 0 ||
@@ -73,7 +74,18 @@ const SignIn = () => {
     if (signIn.status === "complete") {
       await signIn.finalize({ navigate: navigateAfterAuth });
     } else if (signIn.status === "needs_second_factor") {
-      console.log("MFA Required.");
+      const emailCodeFactor = signIn.supportedSecondFactors.find(
+        (factor) => factor.strategy === "email_code",
+      );
+
+      if (emailCodeFactor) {
+        await signIn.mfa.sendEmailCode();
+      } else {
+        const errMsg =
+          "No supported MFA method available. Please contact support.";
+        console.error(errMsg, signIn.supportedSecondFactors);
+        setMfaError(errMsg);
+      }
     } else if (signIn.status === "needs_client_trust") {
       const emailCodeFactor = signIn.supportedSecondFactors.find(
         (factor) => factor.strategy === "email_code",
@@ -81,6 +93,11 @@ const SignIn = () => {
 
       if (emailCodeFactor) {
         await signIn.mfa.sendEmailCode();
+      } else {
+        const errMsg =
+          "No supported verification method available. Please contact support.";
+        console.error(errMsg, signIn.supportedSecondFactors);
+        setMfaError(errMsg);
       }
     } else {
       console.error("Sign-in attempt not complete:", signIn);
@@ -97,8 +114,11 @@ const SignIn = () => {
     }
   };
 
-  // Show verification screen if client trust is needed
-  if (signIn.status === "needs_client_trust") {
+  // Show verification screen for MFA or client trust
+  if (
+    signIn.status === "needs_second_factor" ||
+    signIn.status === "needs_client_trust"
+  ) {
     return (
       <SafeAreaView className="auth-safe-area">
         <KeyboardAvoidingView
@@ -267,6 +287,10 @@ const SignIn = () => {
                     </Text>
                   )}
                 </View>
+
+                {mfaError && (
+                  <Text className="auth-error">{mfaError}</Text>
+                )}
 
                 <Pressable
                   className={`auth-button ${(!formValid || fetchStatus === "fetching") && "auth-button-disabled"}`}
