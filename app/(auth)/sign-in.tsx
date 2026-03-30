@@ -29,9 +29,33 @@ const SignIn = () => {
   const emailValid =
     emailAddress.length === 0 ||
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress);
-  const passwordValid = password.length === 0 || password.length > 0;
+  const passwordValid = password.length > 0;
   const formValid =
     emailAddress.length > 0 && password.length > 0 && emailValid;
+
+  const navigateAfterAuth = ({
+    session,
+    decorateUrl,
+  }: {
+    session: any;
+    decorateUrl: (path: string) => string;
+  }) => {
+    if (session?.currentTask) {
+      console.log(session?.currentTask);
+      return;
+    }
+
+    const url = decorateUrl("/(tabs)");
+    if (url.startsWith("http")) {
+      if (typeof window !== "undefined" && window.location) {
+        window.location.href = url;
+      } else {
+        router.replace("/(tabs)" as Href);
+      }
+    } else {
+      router.replace(url as Href);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!formValid) return;
@@ -47,25 +71,7 @@ const SignIn = () => {
     }
 
     if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
-
-          const url = decorateUrl("/(tabs)");
-          if (url.startsWith("http")) {
-            if (typeof window !== "undefined" && window.location) {
-              window.location.href = url;
-            } else {
-              router.replace("/(tabs)" as Href);
-            }
-          } else {
-            router.replace(url as Href);
-          }
-        },
-      });
+      await signIn.finalize({ navigate: navigateAfterAuth });
     } else if (signIn.status === "needs_second_factor") {
       console.log("MFA Required.");
     } else if (signIn.status === "needs_client_trust") {
@@ -85,25 +91,7 @@ const SignIn = () => {
     await signIn.mfa.verifyEmailCode({ code });
 
     if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
-
-          const url = decorateUrl("/(tabs)");
-          if (url.startsWith("http")) {
-            if (typeof window !== "undefined" && window.location) {
-              window.location.href = url;
-            } else {
-              router.replace("/(tabs)" as Href);
-            }
-          } else {
-            router.replace(url as Href);
-          }
-        },
-      });
+      await signIn.finalize({ navigate: navigateAfterAuth });
     } else {
       console.error("Sign-in attempt not complete:", signIn);
     }
