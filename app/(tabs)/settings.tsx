@@ -2,6 +2,7 @@ import images from "@/constants/images";
 import { useSubscriptionStore } from "@/lib/subscriptionStore";
 import { useClerk, useUser } from "@clerk/expo";
 import { styled } from "nativewind";
+import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 
@@ -11,14 +12,19 @@ const Settings = () => {
   const { signOut } = useClerk();
   const { user } = useUser();
   const { resetSubscriptions } = useSubscriptionStore();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
     try {
       await signOut();
       resetSubscriptions();
     } catch (error) {
       console.error("Sign-out failed:", error);
       // Don't reset analytics if sign-out failed
+      // Don't reset subscriptions if sign-out failed
+      setIsSigningOut(false);
     }
   };
 
@@ -82,17 +88,21 @@ const Settings = () => {
               Joined
             </Text>
             <Text className="text-sm font-sans-medium text-primary">
-              {user?.createdAt
-                ? new Date(user.createdAt).toLocaleDateString()
-                : "N/A"}
+              {user?.createdAt ? user.createdAt.toLocaleDateString() : "N/A"}
             </Text>
           </View>
         </View>
       </View>
 
       {/* Sign Out Button */}
-      <Pressable className="auth-button bg-destructive" onPress={handleSignOut}>
-        <Text className="auth-button-text text-white">Sign Out</Text>
+      <Pressable
+        className={`auth-button bg-destructive ${isSigningOut ? "opacity-50" : ""}`}
+        onPress={handleSignOut}
+        disabled={isSigningOut}
+      >
+        <Text className="auth-button-text text-white">
+          {isSigningOut ? "Signing Out..." : "Sign Out"}
+        </Text>
       </Pressable>
     </SafeAreaView>
   );

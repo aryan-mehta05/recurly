@@ -9,7 +9,7 @@ export default function RootLayout() {
     return null;
   }
 
-  if (!isSignedIn) {
+  if (isSignedIn) {
     return <Redirect href="/(tabs)" />;
   }
 
