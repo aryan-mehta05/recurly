@@ -1,18 +1,21 @@
 import images from "@/constants/images";
+import { useSubscriptionStore } from "@/lib/subscriptionStore";
 import { useClerk, useUser } from "@clerk/expo";
 import { styled } from "nativewind";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
+
 const SafeAreaView = styled(RNSafeAreaView);
 
 const Settings = () => {
   const { signOut } = useClerk();
   const { user } = useUser();
+  const { resetSubscriptions } = useSubscriptionStore();
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      // Only reset analytics after successful sign-out
+      resetSubscriptions();
     } catch (error) {
       console.error("Sign-out failed:", error);
       // Don't reset analytics if sign-out failed
@@ -67,7 +70,11 @@ const Settings = () => {
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {user?.id?.substring(0, 20)}...
+              {user?.id
+                ? user.id.length > 20
+                  ? `${user.id.substring(0, 20)}...`
+                  : user.id
+                : "N/A"}
             </Text>
           </View>
           <View className="flex-row justify-between items-center py-2">

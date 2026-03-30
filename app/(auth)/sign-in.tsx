@@ -105,7 +105,12 @@ const SignIn = () => {
   };
 
   const handleVerify = async () => {
-    await signIn.mfa.verifyEmailCode({ code });
+    const { error } = await signIn.mfa.verifyEmailCode({ code });
+
+    if (error) {
+      console.error(JSON.stringify(error, null, 2));
+      return;
+    }
 
     if (signIn.status === "complete") {
       await signIn.finalize({ navigate: navigateAfterAuth });
@@ -288,9 +293,7 @@ const SignIn = () => {
                   )}
                 </View>
 
-                {mfaError && (
-                  <Text className="auth-error">{mfaError}</Text>
-                )}
+                {mfaError && <Text className="auth-error">{mfaError}</Text>}
 
                 <Pressable
                   className={`auth-button ${(!formValid || fetchStatus === "fetching") && "auth-button-disabled"}`}
