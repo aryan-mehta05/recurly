@@ -1,5 +1,4 @@
 import { icons } from "@/constants/icons";
-import { posthog } from "@/src/config/posthog";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import React, { useState } from "react";
@@ -59,8 +58,8 @@ const CreateSubscriptionModal = ({
   const isValidPrice = () => {
     const trimmedPrice = price.trim();
     if (!trimmedPrice) return false;
-    // Strict numeric pattern check
-    if (!/^\s*[+-]?(\d+(\.\d+)?|\.\d+)\s*$/.test(trimmedPrice)) return false;
+    // Strict positive numeric pattern
+    if (!/^(\d+(\.\d+)?|\.\d+)$/.test(trimmedPrice)) return false;
     const numValue = Number(trimmedPrice);
     return Number.isFinite(numValue) && numValue > 0;
   };
@@ -91,13 +90,6 @@ const CreateSubscriptionModal = ({
     };
 
     onSubmit(newSubscription);
-
-    posthog.capture("subscription_created", {
-      subscription_name: name.trim(),
-      subscription_price: priceValue,
-      subscription_frequency: frequency,
-      subscription_category: category,
-    });
 
     resetForm();
     onClose();

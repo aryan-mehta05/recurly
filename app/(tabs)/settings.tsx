@@ -19,9 +19,9 @@ const Settings = () => {
   const handleSignOut = async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
-    posthog.capture("user_signed_out");
     try {
       await signOut();
+      posthog.capture("user_signed_out");
       posthog.reset();
       resetSubscriptions();
     } catch (error) {
