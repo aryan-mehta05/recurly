@@ -1,3 +1,4 @@
+import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import ListHeading from "@/components/ListHeading";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
@@ -9,6 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useUser } from "@clerk/expo";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
+import { usePostHog } from "posthog-react-native";
 import { useMemo, useState } from "react";
 import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +19,7 @@ const SafeAreaView = styled(RNSafeAreaView);
 
 export default function App() {
   const { user } = useUser();
+  const posthog = usePostHog();
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
@@ -45,10 +48,27 @@ export default function App() {
     setExpandedSubscriptionId((currentId) =>
       currentId === item.id ? null : item.id,
     );
+    posthog.capture(
+      isExpanding ? "subscription_expanded" : "subscription_collapsed",
+      {
+        subscription_name: item.name,
+        subscription_id: item.id,
+      },
+    );
   };
 
   const handleCreateSubscription = (newSubscription: Subscription) => {
     addSubscription(newSubscription);
+    posthog.capture("subscription_created", {
+      subscription_name: newSubscription.name,
+      subscription_price: newSubscription.price,
+      ...(newSubscription.frequency && {
+        subscription_frequency: newSubscription.frequency,
+      }),
+      ...(newSubscription.category && {
+        subscription_category: newSubscription.category,
+      }),
+    });
   };
 
   // Get user display name: firstName, fullName, or email
@@ -133,6 +153,12 @@ export default function App() {
           <Text className="home-empty-state">No subscriptions yet.</Text>
         }
         contentContainerClassName="pb-30"
+      />
+
+      <CreateSubscriptionModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onSubmit={handleCreateSubscription}
       />
     </SafeAreaView>
   );

@@ -2,6 +2,7 @@ import images from "@/constants/images";
 import { useSubscriptionStore } from "@/lib/subscriptionStore";
 import { useClerk, useUser } from "@clerk/expo";
 import { styled } from "nativewind";
+import { usePostHog } from "posthog-react-native";
 import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
@@ -11,14 +12,17 @@ const SafeAreaView = styled(RNSafeAreaView);
 const Settings = () => {
   const { signOut } = useClerk();
   const { user } = useUser();
+  const posthog = usePostHog();
   const { resetSubscriptions } = useSubscriptionStore();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
+    posthog.capture("user_signed_out");
     try {
       await signOut();
+      posthog.reset();
       resetSubscriptions();
     } catch (error) {
       console.error("Sign-out failed:", error);
