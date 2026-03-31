@@ -12,13 +12,13 @@ const Subscriptions = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { subscriptions } = useSubscriptionStore();
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
   const filteredSubscriptions = subscriptions.filter(
     (subscription) =>
-      subscription.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      subscription.category
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      subscription.plan?.toLowerCase().includes(searchQuery.toLowerCase()),
+      subscription.name.toLowerCase().includes(normalizedQuery) ||
+      subscription.category?.toLowerCase().includes(normalizedQuery) ||
+      subscription.plan?.toLowerCase().includes(normalizedQuery),
   );
 
   return (
@@ -27,7 +27,7 @@ const Subscriptions = () => {
         data={filteredSubscriptions}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
-          <View className="px-5 pt-5">
+          <View className="pt-5">
             <Text className="text-3xl font-bold text-dark mb-5">
               Subscriptions
             </Text>
@@ -50,7 +50,6 @@ const Subscriptions = () => {
           />
         )}
         contentContainerStyle={{
-          paddingHorizontal: 20,
           paddingBottom: 20,
           gap: 12,
         }}
