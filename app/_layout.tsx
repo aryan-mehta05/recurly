@@ -1,4 +1,5 @@
 import "@/global.css";
+import { posthog } from "@/src/config/posthog";
 import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
@@ -8,6 +9,7 @@ import {
   useGlobalSearchParams,
   usePathname,
 } from "expo-router";
+import { PostHogProvider } from "posthog-react-native";
 import { useEffect, useRef } from "react";
 
 SplashScreen.preventAutoHideAsync();
@@ -36,6 +38,10 @@ function RootLayoutContent() {
         {} as Record<string, string | string[]>,
       );
 
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+        ...sanitizedParams,
+      });
       previousPathname.current = pathname;
     }
   }, [pathname, params]);
@@ -62,8 +68,17 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <RootLayoutContent />
-    </ClerkProvider>
+    <PostHogProvider
+      client={posthog}
+      autocapture={{
+        captureScreens: false,
+        captureTouches: true,
+        propsToCapture: ["testID"],
+      }}
+    >
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <RootLayoutContent />
+      </ClerkProvider>
+    </PostHogProvider>
   );
 }
